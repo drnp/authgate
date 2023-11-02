@@ -5,7 +5,7 @@
  */
 
 /**
- * @file oauth.go
+ * @file oauth_forsite.go
  * @package model
  * @author Dr.NP <np@herewe.tech>
  * @since 10/31/2023
@@ -29,12 +29,12 @@ import (
 	"github.com/ory/fosite/token/jwt"
 )
 
-type OAuth struct {
+type OAuthFosite struct {
 	oauth2Provider fosite.OAuth2Provider
 }
 
-func NewOAuthService() *OAuth {
-	svc := new(OAuth)
+func NewOAuthFositeService() *OAuthFosite {
+	svc := new(OAuthFosite)
 	key, _ := rsa.GenerateKey(rand.Reader, 2048)
 	svc.oauth2Provider = compose.ComposeAllEnabled(
 		&fosite.Config{
@@ -47,7 +47,7 @@ func NewOAuthService() *OAuth {
 	return svc
 }
 
-func (s *OAuth) Authorize(ctx context.Context, writer http.ResponseWriter, req *http.Request) error {
+func (s *OAuthFosite) Authorize(ctx context.Context, writer http.ResponseWriter, req *http.Request) error {
 	ar, err := s.oauth2Provider.NewAuthorizeRequest(ctx, req)
 	if err != nil {
 		return err

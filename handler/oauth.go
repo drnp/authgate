@@ -22,12 +22,16 @@ import (
 )
 
 type OAuth struct {
-	svcOAuth2 *service.OAuth2
+	svcOAuthFosite *service.OAuthFosite
+	svcOAuthOAuth2 *service.OAuthOAuth2
+	svcOAuthRemote *service.OAuthRemote
 }
 
 func InitOAuth() *OAuth {
 	h := new(OAuth)
-	h.svcOAuth2 = service.NewOAuth2Service()
+	h.svcOAuthFosite = service.NewOAuthFositeService()
+	h.svcOAuthOAuth2 = service.NewOAuthOAuth2Service()
+	h.svcOAuthRemote = service.NewOAuthRemoteService()
 
 	og := runtime.Server.Group("/oauth")
 	og.GET("/login", h.loginPage).Name = "OAuthGetLogin"
@@ -50,7 +54,7 @@ func (h *OAuth) registerPage(ctx echo.Context) error {
 
 func (h *OAuth) authorize(ctx echo.Context) error {
 	//err := h.svcOAuth.Authorize(ctx.Request().Context(), ctx.Response().Writer, ctx.Request())
-	err := h.svcOAuth2.Authorize(ctx.Request().Context(), ctx.Response().Writer, ctx.Request())
+	err := h.svcOAuthOAuth2.Authorize(ctx.Request().Context(), ctx.Response().Writer, ctx.Request())
 	if err != nil {
 		fmt.Println(err)
 	}

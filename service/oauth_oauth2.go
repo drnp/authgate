@@ -5,7 +5,7 @@
  */
 
 /**
- * @file oauth2.go
+ * @file oauth_oauth2.go
  * @package model
  * @author Dr.NP <np@herewe.tech>
  * @since 11/01/2023
@@ -26,13 +26,13 @@ import (
 	"github.com/go-oauth2/oauth2/v4/store"
 )
 
-type OAuth2 struct {
+type OAuthOAuth2 struct {
 	oauth2Manager *manage.Manager
 	oauth2Server  *server.Server
 }
 
-func NewOAuth2Service() *OAuth2 {
-	svc := new(OAuth2)
+func NewOAuthOAuth2Service() *OAuthOAuth2 {
+	svc := new(OAuthOAuth2)
 	clientStore := store.NewClientStore()
 	clientStore.Set("my-client", &models.Client{
 		ID:     "my-client",
@@ -67,7 +67,7 @@ func NewOAuth2Service() *OAuth2 {
 	return svc
 }
 
-func (s *OAuth2) Authorize(ctx context.Context, wr http.ResponseWriter, req *http.Request) error {
+func (s *OAuthOAuth2) Authorize(ctx context.Context, wr http.ResponseWriter, req *http.Request) error {
 	err := s.oauth2Server.HandleAuthorizeRequest(wr, req)
 
 	return err
