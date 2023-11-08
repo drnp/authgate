@@ -44,6 +44,10 @@ func (su SessionUser) Serialize() []byte {
 	return b
 }
 
+func (su *SessionUser) Unserialize(b []byte) {
+	json.Unmarshal(b, su)
+}
+
 type SessionCode struct {
 	Code                  string    `json:"code"`
 	ClientID              string    `json:"client_id"`
@@ -70,6 +74,7 @@ type Sign struct {
 	Name      string
 	Type      string
 	ExpiresIn time.Duration
+	Key       []byte
 }
 
 type JWT struct {
@@ -94,7 +99,7 @@ func JWTSign(sign *Sign) (*JWT, error) {
 		"type":   sign.Type,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ts, err := token.SignedString([]byte(runtime.Config.Auth.JWTAccessSecret))
+	ts, err := token.SignedString(sign.Key)
 	if err != nil {
 		runtime.Logger.Errorf("sign JWT token failed : %s", err)
 
@@ -108,14 +113,14 @@ func JWTSign(sign *Sign) (*JWT, error) {
 }
 
 // Valid JWT token
-func JWTValid(ts string) (jwt.MapClaims, error) {
+func JWTValid(ts, key string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(ts, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			// Error
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
 		}
 
-		return []byte(runtime.Config.Auth.JWTRefreshSecret), nil
+		return []byte(key), nil
 	})
 
 	if err != nil {

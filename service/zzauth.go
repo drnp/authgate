@@ -28,8 +28,8 @@ import (
 const (
 	ZZAuthSecret      = "yaZpfeS*Vgahl6J4wR0Vrli%gt@8h!xrDUQ&nxCfzr!FFttX$P4c3Lk9fgKK3RJ&"
 	ZZAuthSalt        = "pBA2@P5dfq0#OXS63kdmVyuedfZGjYCu"
-	ZZClientValidPath = "/zzauth/api/v1/oauth/client/valid"
-	ZZUserValidPath   = "/zzauth/api/v1/oauth/user/valid"
+	ZZClientValidPath = "/api/v1/oauth/client/valid"
+	ZZUserValidPath   = "/api/v1/oauth/user/valid"
 
 	AccessCodeLength = 40
 )
@@ -66,7 +66,14 @@ type ZZUserValidRequest struct {
 	Token     string `json:"token"`
 }
 
-type ZZUser struct{}
+type ZZUser struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Avatar      string `json:"avatar"`
+	Email       string `json:"email"`
+	Account     string `json:"account"`
+	MobilePhone string `json:"mobile_phone"`
+}
 
 type ZZUserValidResponse struct {
 	Code int     `json:"code"`
@@ -140,12 +147,13 @@ func (s *ZZAuth) ValidUser(ctx context.Context, account, password string) (*ZZUs
 	return resp.Data, nil
 }
 
-func (s *ZZAuth) GenerateToken(ctx context.Context, clientID, secretKey string, user utils.SessionUser) (*utils.SessionCode, error) {
+func (s *ZZAuth) GenerateToken(ctx context.Context, clientID, secretKey string, user *utils.SessionUser) (*utils.SessionCode, error) {
 	jwtAccess, err := utils.JWTSign(&utils.Sign{
 		Sub:       strconv.Itoa(user.ID),
 		Name:      user.Account,
 		Type:      "access",
 		ExpiresIn: time.Duration(runtime.Config.Auth.JWTAccessExpiry) * time.Second,
+		Key:       []byte(secretKey),
 	})
 	if err != nil {
 		return nil, err
@@ -156,21 +164,21 @@ func (s *ZZAuth) GenerateToken(ctx context.Context, clientID, secretKey string, 
 		Name:      user.Account,
 		Type:      "refresh",
 		ExpiresIn: time.Duration(runtime.Config.Auth.JWTRefreshExpiry) * time.Second,
+		Key:       []byte(secretKey),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	code := utils.RandomString(AccessCodeLength)
-	now := time.Now()
 	sc := utils.SessionCode{
 		Code:                  code,
 		ClientID:              clientID,
 		ClientSecret:          secretKey,
 		AccessToken:           jwtAccess.Token,
-		AccessTokenExpiresAt:  now.Add(time.Duration(runtime.Config.Auth.JWTAccessExpiry) * time.Second),
+		AccessTokenExpiresAt:  jwtAccess.Expiry,
 		RefreshToken:          jwtRefresh.Token,
-		RefreshTokenExpiresAt: now.Add(time.Duration(runtime.Config.Auth.JWTRefreshExpiry) * time.Second),
+		RefreshTokenExpiresAt: jwtRefresh.Expiry,
 	}
 
 	err = runtime.Storage.Set(code, sc.Serialize(), time.Duration(runtime.Config.Auth.AuthorizeCodeExpiry)*time.Second)
@@ -195,6 +203,31 @@ func (s *ZZAuth) GetToken(ctx context.Context, code string) (*utils.SessionCode,
 	sc.Unserialize(b)
 
 	return sc, runtime.Storage.Delete(code)
+}
+
+func (s *ZZAuth) RefreshToken(ctx context.Context, refreshToken, clientSecret string) (*utils.SessionCode, error) {
+	claims, err := utils.JWTValid(refreshToken, clientSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	sign := new(utils.Sign)
+	sign.Sub, _ = claims["sub"].(string)
+	sign.Name, _ = claims["name"].(string)
+	sign.Type = "access"
+	sign.ExpiresIn = time.Duration(runtime.Config.Auth.JWTAccessExpiry) * time.Second
+	sign.Key = []byte(clientSecret)
+	jwtAccess, err := utils.JWTSign(sign)
+	if err != nil {
+		return nil, err
+	}
+
+	sc := &utils.SessionCode{
+		AccessToken:          jwtAccess.Token,
+		AccessTokenExpiresAt: jwtAccess.Expiry,
+	}
+
+	return sc, nil
 }
 
 /*

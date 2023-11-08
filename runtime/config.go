@@ -73,7 +73,7 @@ var defaultConfigs = map[string]interface{}{
 	"auth.authorize_code_expiry": 5 * 60,
 	"debug":                      false,
 
-	"zzauth.base_url": "http://1.15.142.115",
+	"zzauth.base_url": "http://zzauth.herewe.tech",
 }
 
 func LoadConfig() error {

@@ -56,9 +56,11 @@ func (r *GetAuthorize) Validation() error {
 }
 
 type PostToken struct {
-	Code         string `json:"code"`
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
+	GrantType    string `json:"grant_type" form:"grant_type"`
+	Code         string `json:"code" form:"code"`
+	ClientID     string `json:"client_id" form:"client_id"`
+	ClientSecret string `json:"client_secret" form:"client_secret"`
+	RefreshToken string `json:"refresh_token" form:"refresh_token"`
 }
 
 /*

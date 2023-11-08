@@ -14,16 +14,7 @@
 package handler
 
 import (
-	"authgate/handler/request"
-	"authgate/handler/response"
-	"authgate/model"
 	"authgate/service"
-	"authgate/utils"
-	"database/sql"
-	"errors"
-	"net/http"
-
-	"github.com/labstack/echo/v4"
 )
 
 type Realm struct {
@@ -43,6 +34,7 @@ func InitRealm() *Realm {
 	return h
 }
 
+/*
 func (h *Realm) list(ctx echo.Context) error {
 	e := utils.WrapResponse(nil)
 	list, err := h.svcRealm.List(ctx.Request().Context(), nil)
@@ -200,6 +192,7 @@ func (h *Realm) delete(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, e)
 }
+*/
 
 /*
  * Local variables:

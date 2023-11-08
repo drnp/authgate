@@ -15,19 +15,30 @@ package handler
 
 import (
 	_ "authgate/docs"
+	"authgate/handler/request"
+	"authgate/handler/response"
 	"authgate/runtime"
+	"authgate/service"
 	"authgate/utils"
+	"encoding/base64"
 	"os"
 
 	"github.com/gofiber/contrib/swagger"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 type Misc struct {
+	svcZZAuth *service.ZZAuth
+	store     *session.Store
 }
 
 func InitMisc() *Misc {
 	h := new(Misc)
+	h.svcZZAuth = service.NewZZAuth()
+	h.store = session.New(session.Config{
+		Storage: runtime.Storage,
+	})
 
 	// runtime.Server.Any("/", h.index)
 	// runtime.Server.Any("/docs/*", echoSwagger.WrapHandler)
@@ -39,6 +50,14 @@ func InitMisc() *Misc {
 		BasePath: "/",
 		FilePath: "./docs/swagger.json",
 	}))
+
+	runtime.Server.Get("/login", h.loginPage).Name("LoginPage")
+	runtime.Server.Post("/login", h.login).Name("PostLogin")
+	runtime.Server.Get("/logout", h.logout).Name("GetLogout")
+	runtime.Server.Get("/register", h.registerPage).Name("RegisterPage")
+	runtime.Server.Post("/register", h.register).Name("PostRegister")
+	runtime.Server.Get("/confirm", h.confirmPage).Name("ConfirmPage")
+	runtime.Server.Post("/confirm", h.confirm).Name("PostConfirm")
 
 	return h
 }
@@ -86,6 +105,153 @@ func (h *Misc) swaggerJson(c *fiber.Ctx) error {
 
 	c.Write(content)
 
+	return nil
+}
+
+func (h *Misc) loginPage(c *fiber.Ctx) error {
+	e := utils.WrapResponse(nil)
+	sess, err := h.store.Get(c)
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	// Check login
+	_, ok := sess.Get("user").([]byte)
+	if !ok {
+		// Not online
+		return c.SendFile("./static/login.html")
+	}
+
+	// Welcome
+	return c.SendFile("./static/welcome.html")
+}
+
+func (h *Misc) login(c *fiber.Ctx) error {
+	e := utils.WrapResponse(nil)
+	sess, err := h.store.Get(c)
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	req := new(request.LoginForm)
+	err = c.BodyParser(req)
+	if err != nil || req.Account == "" || req.Password == "" {
+		e.Status = fiber.StatusBadRequest
+		e.Code = response.CodeInvalidParameter
+		e.Message = response.MsgInvalidParameter
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusBadRequest).Format(e)
+	}
+
+	callback := c.Context().Referer()
+	r := c.Query("r")
+	if r != "" {
+		// Redirect back
+		callback, _ = base64.StdEncoding.DecodeString(r)
+	}
+
+	user, err := h.svcZZAuth.ValidUser(c.Context(), req.Account, req.Password)
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeGetAccountFailed
+		e.Message = response.MsgGetAccountFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	if user == nil {
+		// Authenticate failed
+		e.Status = fiber.StatusUnauthorized
+		e.Code = response.CodeAuthFailed
+		e.Message = response.MsgAuthFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusUnauthorized).Format(e)
+	}
+
+	su := utils.SessionUser{
+		ID:          user.ID,
+		Name:        user.Name,
+		Avatar:      user.Avatar,
+		Email:       user.Email,
+		Account:     user.Account,
+		MobilePhone: user.MobilePhone,
+	}
+	sess.Set("user", su.Serialize())
+	err = sess.Save()
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	return c.Redirect(string(callback))
+}
+
+func (h *Misc) registerPage(c *fiber.Ctx) error {
+	return nil
+}
+
+func (h *Misc) logout(c *fiber.Ctx) error {
+	e := utils.WrapResponse(nil)
+	sess, err := h.store.Get(c)
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	err = sess.Destroy()
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	// Redirect
+	err = c.Redirect("/login")
+	if err != nil {
+		e.Status = fiber.StatusBadRequest
+		e.Code = response.CodeGeneralHTTPError
+		e.Message = response.MsgGeneralHTTPError
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusBadRequest).Format(e)
+	}
+
+	return nil
+}
+
+func (h *Misc) register(c *fiber.Ctx) error {
+	return nil
+}
+
+func (h *Misc) confirmPage(c *fiber.Ctx) error {
+	return nil
+}
+
+func (h *Misc) confirm(c *fiber.Ctx) error {
 	return nil
 }
 

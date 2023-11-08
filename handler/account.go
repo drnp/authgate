@@ -14,16 +14,7 @@
 package handler
 
 import (
-	"authgate/handler/request"
-	"authgate/handler/response"
-	"authgate/model"
 	"authgate/service"
-	"authgate/utils"
-	"database/sql"
-	"errors"
-	"net/http"
-
-	"github.com/labstack/echo/v4"
 )
 
 type Account struct {
@@ -44,6 +35,7 @@ func InitAccount() *Account {
 	return h
 }
 
+/*
 func (h *Account) list(ctx echo.Context) error {
 	e := utils.WrapResponse(nil)
 	realmID := ctx.QueryParam("realm_id")
@@ -251,6 +243,7 @@ func (h *Account) auth(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, e)
 }
+*/
 
 /*
  * Local variables:

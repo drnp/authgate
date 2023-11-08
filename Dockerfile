@@ -5,6 +5,7 @@ RUN echo "Asia/shanghai" > /etc/timezone && \
 
 ADD bin/* /opt/zzauth/
 ADD docs/* /opt/zzauth/docs/
+ADD static/* /opt/zzauth/static/
 WORKDIR /opt/zzauth
 EXPOSE 9900
 CMD [ "/opt/zzauth/authgate" ]

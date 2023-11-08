@@ -19,7 +19,9 @@ import (
 	"authgate/runtime"
 	"authgate/service"
 	"authgate/utils"
+	"encoding/base64"
 	"net/url"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -44,79 +46,13 @@ func InitOAuth() *OAuth {
 	})
 
 	og := runtime.Server.Group("/oauth")
-	og.Get("/login", h.loginPage).Name("OAuthLoginPage")
-	og.Post("/login", h.login).Name("OAuthPostLogin")
-	og.Get("/logout", h.logout).Name("OAuthGetLogout")
-	og.Get("/register", h.registerPage).Name("OAuthRegisterPage")
-	og.Post("/register", h.register).Name("OAuthPostRegister")
-	og.Get("/confirm", h.confirmPage).Name("OAuthConfirmPage")
-	og.Post("/confirm", h.confirm).Name("OAuthPostConfirm")
+
 	og.Get("/authorize", h.authorize).Name("OAuthGetAuthorize")
 	og.Post("/token", h.token).Name("OAuthPostToken")
 	og.Post("/revoke", h.revoke).Name("OAuthPostRevoke")
 	og.Post("/introspect", h.introspect).Name("OAuthPostIntrospect")
 
 	return h
-}
-
-func (h *OAuth) loginPage(c *fiber.Ctx) error {
-	return nil
-}
-
-func (h *OAuth) login(c *fiber.Ctx) error {
-	return nil
-}
-
-func (h *OAuth) registerPage(c *fiber.Ctx) error {
-	return nil
-}
-
-func (h *OAuth) logout(c *fiber.Ctx) error {
-	e := utils.WrapResponse(nil)
-	sess, err := h.store.Get(c)
-	if err != nil {
-		e.Status = fiber.StatusInternalServerError
-		e.Code = response.CodeStorageFailed
-		e.Message = response.MsgStorageFailed
-		e.Data = err.Error()
-
-		return c.Status(fiber.StatusInternalServerError).Format(e)
-	}
-
-	err = sess.Destroy()
-	if err != nil {
-		e.Status = fiber.StatusInternalServerError
-		e.Code = response.CodeStorageFailed
-		e.Message = response.MsgStorageFailed
-		e.Data = err.Error()
-
-		return c.Status(fiber.StatusInternalServerError).Format(e)
-	}
-
-	// Redirect
-	err = c.RedirectToRoute("OAuthLoginPage", nil)
-	if err != nil {
-		e.Status = fiber.StatusBadRequest
-		e.Code = response.CodeGeneralHTTPError
-		e.Message = response.MsgGeneralHTTPError
-		e.Data = err.Error()
-
-		return c.Status(fiber.StatusBadRequest).Format(e)
-	}
-
-	return nil
-}
-
-func (h *OAuth) register(c *fiber.Ctx) error {
-	return nil
-}
-
-func (h *OAuth) confirmPage(c *fiber.Ctx) error {
-	return nil
-}
-
-func (h *OAuth) confirm(c *fiber.Ctx) error {
-	return nil
 }
 
 func (h *OAuth) authorize(c *fiber.Ctx) error {
@@ -132,12 +68,16 @@ func (h *OAuth) authorize(c *fiber.Ctx) error {
 	}
 
 	// Check login
-	user, ok := sess.Get("user").(utils.SessionUser)
+	ub, ok := sess.Get("user").([]byte)
 	if !ok {
 		// Not online
-		return c.RedirectToRoute("OAuthLoginPage", nil)
+		r := base64.StdEncoding.EncodeToString(c.Context().RequestURI())
+
+		return c.Redirect("/login?r=" + r)
 	}
 
+	su := new(utils.SessionUser)
+	su.Unserialize(ub)
 	req := &request.GetAuthorize{}
 	err = c.QueryParser(req)
 	if err == nil {
@@ -167,7 +107,7 @@ func (h *OAuth) authorize(c *fiber.Ctx) error {
 	// All pass here
 
 	// Generate code
-	sc, err := h.svcZZAuth.GenerateToken(c.Context(), client.ClientID, client.SecretKey, user)
+	sc, err := h.svcZZAuth.GenerateToken(c.Context(), client.ClientID, client.SecretKey, su)
 	if err != nil {
 		e.Status = fiber.StatusInternalServerError
 		e.Code = response.CodeAuthInternal
@@ -178,7 +118,7 @@ func (h *OAuth) authorize(c *fiber.Ctx) error {
 	}
 
 	// Redirect
-	u, _ := url.Parse(req.RedirectURI)
+	u, _ := url.Parse(client.RedirectURL)
 	q := u.Query()
 	q.Add("code", sc.Code)
 	q.Add("state", req.State)
@@ -191,10 +131,7 @@ func (h *OAuth) token(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	req := new(request.PostToken)
 	err := c.BodyParser(req)
-	if err != nil ||
-		req.Code == "" ||
-		req.ClientID == "" ||
-		req.ClientSecret == "" {
+	if err != nil || req.ClientID == "" || req.ClientSecret == "" {
 		e.Status = fiber.StatusBadRequest
 		e.Code = response.CodeInvalidParameter
 		e.Message = response.MsgInvalidParameter
@@ -207,44 +144,84 @@ func (h *OAuth) token(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).Format(e)
 	}
 
-	sc, err := h.svcZZAuth.GetToken(c.Context(), req.Code)
-	if err != nil {
-		e.Status = fiber.StatusInternalServerError
-		e.Code = response.CodeAuthInternal
-		e.Message = response.MsgAuthInternal
-		e.Data = err.Error()
+	switch strings.ToLower(req.GrantType) {
+	case "refresh_token":
+		if req.RefreshToken == "" {
+			e.Status = fiber.StatusBadRequest
+			e.Code = response.CodeInvalidParameter
+			e.Message = response.MsgInvalidParameter
+			e.Data = "empty refresh_token"
 
-		return c.Status(fiber.StatusInternalServerError).Format(e)
+			return c.Status(fiber.StatusBadRequest).Format(e)
+		}
+
+		sc, err := h.svcZZAuth.RefreshToken(c.Context(), req.RefreshToken, req.ClientSecret)
+		if err != nil {
+			e.Status = fiber.StatusInternalServerError
+			e.Code = response.CodeAuthInternal
+			e.Message = response.MsgAuthInternal
+			e.Data = err.Error()
+
+			return c.Status(fiber.StatusInternalServerError).Format(e)
+		}
+
+		resp := &response.PostToken{
+			ClientID:             req.ClientID,
+			AccessToken:          sc.AccessToken,
+			AccessTokenExpiresAt: sc.AccessTokenExpiresAt,
+		}
+		e.Data = resp
+	case "implict":
+	default:
+		// access_token
+		if req.Code == "" {
+			e.Status = fiber.StatusBadRequest
+			e.Code = response.CodeInvalidParameter
+			e.Message = response.MsgInvalidParameter
+			e.Data = "empty code"
+
+			return c.Status(fiber.StatusBadRequest).Format(e)
+		}
+
+		sc, err := h.svcZZAuth.GetToken(c.Context(), req.Code)
+		if err != nil {
+			e.Status = fiber.StatusInternalServerError
+			e.Code = response.CodeAuthInternal
+			e.Message = response.MsgAuthInternal
+			e.Data = err.Error()
+
+			return c.Status(fiber.StatusInternalServerError).Format(e)
+		}
+
+		if sc == nil {
+			// No token here
+			e.Status = fiber.StatusNotFound
+			e.Code = response.CodeTargetNotFound
+			e.Message = response.MsgTargetNotFound
+			e.Data = "token not found via given code"
+
+			return c.Status(fiber.StatusNotFound).Format(e)
+		}
+
+		if req.ClientID != sc.ClientID || req.ClientSecret != sc.ClientSecret {
+			// Check client failed
+			e.Status = fiber.StatusForbidden
+			e.Code = response.CodeAuthFailed
+			e.Message = response.MsgAuthFailed
+			e.Data = "client authorize failed"
+
+			return c.Status(fiber.StatusForbidden).Format(e)
+		}
+
+		resp := &response.PostToken{
+			ClientID:              req.ClientID,
+			AccessToken:           sc.AccessToken,
+			AccessTokenExpiresAt:  sc.AccessTokenExpiresAt,
+			RefreshToken:          sc.RefreshToken,
+			RefreshTokenExpiresAt: sc.RefreshTokenExpiresAt,
+		}
+		e.Data = resp
 	}
-
-	if sc == nil {
-		// No token here
-		e.Status = fiber.StatusNotFound
-		e.Code = response.CodeTargetNotFound
-		e.Message = response.MsgTargetNotFound
-		e.Data = "token not found via given code"
-
-		return c.Status(fiber.StatusNotFound).Format(e)
-	}
-
-	if req.ClientID != sc.ClientID || req.ClientSecret != sc.ClientSecret {
-		// Check client failed
-		e.Status = fiber.StatusForbidden
-		e.Code = response.CodeAuthFailed
-		e.Message = response.MsgAuthFailed
-		e.Data = "client authorize failed"
-
-		return c.Status(fiber.StatusForbidden).Format(e)
-	}
-
-	resp := &response.PostToken{
-		ClientID:              req.ClientID,
-		AccessToken:           sc.AccessToken,
-		AccessTokenExpiresAt:  sc.AccessTokenExpiresAt,
-		RefreshToken:          sc.RefreshToken,
-		RefreshTokenExpiresAt: sc.RefreshTokenExpiresAt,
-	}
-	e.Data = resp
 
 	return c.Format(e)
 }
