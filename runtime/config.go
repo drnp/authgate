@@ -43,28 +43,37 @@ type mainConfig struct {
 		DB       int    `json:"db" mapstructure:"db"`
 	}
 	Auth struct {
-		JWTAccessSecret  string `json:"jwt_access_secret" mapstructure:"jwt_access_secret"`
-		JWTRefreshSecret string `json:"jwt_refresh_secret" mapstructure:"jwt_refresh_secret"`
-		JWTAccessExpiry  int64  `json:"jwt_access_expiry" mapstructure:"jwt_access_expiry"`   // In minute
-		JWTRefreshExpiry int64  `json:"jwt_refresh_expiry" mapstructure:"jwt_refresh_expiry"` // In minute
+		JWTAccessSecret     string `json:"jwt_access_secret" mapstructure:"jwt_access_secret"`
+		JWTRefreshSecret    string `json:"jwt_refresh_secret" mapstructure:"jwt_refresh_secret"`
+		JWTAccessExpiry     int64  `json:"jwt_access_expiry" mapstructure:"jwt_access_expiry"`         // In second
+		JWTRefreshExpiry    int64  `json:"jwt_refresh_expiry" mapstructure:"jwt_refresh_expiry"`       // In second
+		AuthorizeCodeExpiry int64  `json:"authorize_code_expiry" mapstructure:"authorize_code_expiry"` // In second
 	} `json:"auth" mapstructure:"auth"`
 	Debug bool `json:"debug" mapstructure:"debug"`
+
+	// Additional
+	ZZAuth struct {
+		BaseURL string `json:"base_url" mapstructure:"base_url"`
+	} `json:"zzauth" mapstructure:"zzauth"`
 }
 
 var Config mainConfig
 
 var defaultConfigs = map[string]interface{}{
-	"http.listen_addr":          ":9900",
-	"http.prefork":              false,
-	"http.long_polling_timeout": 30,
-	"database.dsn":              "postgres://postgres@localhost:5432/postgres?sslmode=disable",
-	"nats.url":                  nats.DefaultURL,
-	"redis.addr":                "localhost:6379",
-	"auth.jwt_access_secret":    "access_secret",
-	"auth.jwt_refresh_secret":   "refresh_secret",
-	"auth.jwt_access_expiry":    10,
-	"auth.jwt_refresh_expiry":   43200,
-	"debug":                     false,
+	"http.listen_addr":           ":9900",
+	"http.prefork":               false,
+	"http.long_polling_timeout":  30,
+	"database.dsn":               "postgres://postgres@localhost:5432/postgres?sslmode=disable",
+	"nats.url":                   nats.DefaultURL,
+	"redis.addr":                 "localhost:6379",
+	"auth.jwt_access_secret":     "access_secret",
+	"auth.jwt_refresh_secret":    "refresh_secret",
+	"auth.jwt_access_expiry":     2 * 60 * 60,
+	"auth.jwt_refresh_expiry":    30 * 24 * 60 * 60,
+	"auth.authorize_code_expiry": 5 * 60,
+	"debug":                      false,
+
+	"zzauth.base_url": "http://1.15.142.115",
 }
 
 func LoadConfig() error {

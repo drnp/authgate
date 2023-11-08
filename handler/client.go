@@ -17,7 +17,6 @@ import (
 	"authgate/handler/request"
 	"authgate/handler/response"
 	"authgate/model"
-	"authgate/runtime"
 	"authgate/service"
 	"authgate/utils"
 	"database/sql"
@@ -35,11 +34,11 @@ func InitClient() *Client {
 	h := new(Client)
 	h.svcClient = new(service.Client)
 
-	runtime.Server.GET("/clients", h.list).Name = "ClientGetList"
-	runtime.Server.GET("/client/:id", h.get).Name = "ClientGet"
-	runtime.Server.POST("/client", h.post).Name = "ClientPost"
-	runtime.Server.PUT("/client/:id", h.put).Name = "ClientPut"
-	runtime.Server.DELETE("/client/:id", h.delete).Name = "ClientDelete"
+	// runtime.Server.GET("/clients", h.list).Name = "ClientGetList"
+	// runtime.Server.GET("/client/:id", h.get).Name = "ClientGet"
+	// runtime.Server.POST("/client", h.post).Name = "ClientPost"
+	// runtime.Server.PUT("/client/:id", h.put).Name = "ClientPut"
+	// runtime.Server.DELETE("/client/:id", h.delete).Name = "ClientDelete"
 
 	return h
 }

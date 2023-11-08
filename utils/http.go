@@ -43,6 +43,12 @@ func WrapResponse(data interface{}) *Envelope {
 	return e
 }
 
+func (e *Envelope) SetCode(code int) *Envelope {
+	e.Code = code
+
+	return e
+}
+
 func (e *Envelope) SetStatus(status int) *Envelope {
 	e.Status = status
 
@@ -51,6 +57,12 @@ func (e *Envelope) SetStatus(status int) *Envelope {
 
 func (e *Envelope) SetMessage(msg string) *Envelope {
 	e.Message = msg
+
+	return e
+}
+
+func (e *Envelope) SetData(data interface{}) *Envelope {
+	e.Data = data
 
 	return e
 }

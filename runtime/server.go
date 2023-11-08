@@ -16,36 +16,40 @@ package runtime
 import (
 	"os"
 
-	"github.com/brpaz/echozap"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/gofiber/contrib/fiberzap"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/pkg/errors"
 )
 
-var Server *echo.Echo
+var Server *fiber.App
+
+//var Server *echo.Echo
 
 func InitServer() error {
-	// app := fiber.New(fiber.Config{
-	// 	ServerHeader:          AppName,
-	// 	DisableKeepalive:      false,
-	// 	AppName:               AppName,
-	// 	Prefork:               Config.HTTP.Prefork,
-	// 	DisableStartupMessage: true,
-	// })
-	// app.Use(fiberzap.New(fiberzap.Config{
-	// 	Logger: LoggerRaw,
-	// }))
-	// app.Use(recover.New())
-	// app.Use(cors.New())
-	// app.Use(requestid.New())
+	app := fiber.New(fiber.Config{
+		ServerHeader:          AppName,
+		DisableKeepalive:      false,
+		AppName:               AppName,
+		Prefork:               Config.HTTP.Prefork,
+		DisableStartupMessage: true,
+	})
+	app.Use(fiberzap.New(fiberzap.Config{
+		Logger: LoggerRaw,
+	}))
+	app.Use(recover.New())
+	app.Use(cors.New())
+	app.Use(requestid.New())
 
 	// Server = app
-	app := echo.New()
-	app.HideBanner = true
-	app.Use(echozap.ZapLogger(LoggerRaw))
-	app.Use(middleware.Recover())
-	app.Use(middleware.CORS())
-	app.Use(middleware.RequestID())
+	// app := echo.New()
+	// app.HideBanner = true
+	// app.Use(echozap.ZapLogger(LoggerRaw))
+	// app.Use(middleware.Recover())
+	// app.Use(middleware.CORS())
+	// app.Use(middleware.RequestID())
 
 	Server = app
 
@@ -60,8 +64,8 @@ func Serve() error {
 
 	Logger.Infof("starting HTTP server on [%s]", Config.HTTP.ListenAddr)
 
-	//return Server.Listen(Config.HTTP.ListenAddr)
-	return Server.Start(Config.HTTP.ListenAddr)
+	return Server.Listen(Config.HTTP.ListenAddr)
+	//return Server.Start(Config.HTTP.ListenAddr)
 }
 
 func Exit() {

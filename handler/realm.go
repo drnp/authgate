@@ -17,7 +17,6 @@ import (
 	"authgate/handler/request"
 	"authgate/handler/response"
 	"authgate/model"
-	"authgate/runtime"
 	"authgate/service"
 	"authgate/utils"
 	"database/sql"
@@ -35,11 +34,11 @@ func InitRealm() *Realm {
 	h := new(Realm)
 	h.svcRealm = new(service.Realm)
 
-	runtime.Server.GET("/realms", h.list).Name = "RealmGetList"
-	runtime.Server.GET("/realm/:id", h.get).Name = "RealmGet"
-	runtime.Server.POST("realm", h.post).Name = "RealmPost"
-	runtime.Server.PUT("/realm/:id", h.put).Name = "RealmPut"
-	runtime.Server.DELETE("/realm/:id", h.delete).Name = "RealmDelete"
+	// runtime.Server.GET("/realms", h.list).Name = "RealmGetList"
+	// runtime.Server.GET("/realm/:id", h.get).Name = "RealmGet"
+	// runtime.Server.POST("realm", h.post).Name = "RealmPost"
+	// runtime.Server.PUT("/realm/:id", h.put).Name = "RealmPut"
+	// runtime.Server.DELETE("/realm/:id", h.delete).Name = "RealmDelete"
 
 	return h
 }

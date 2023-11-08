@@ -1,0 +1,43 @@
+kind: pipeline
+type: docker
+name: zzauth::authgate
+
+steps:
+  - name: build
+    image: golang:alpine
+    commands:
+      - "apk add make git"
+      - "make swag"
+      - "make"
+
+  - name: docker
+    image: plugins/docker:latest
+    settings:
+      username:
+        from_secret: docker_registry_username_tencent
+      password:
+        from_secret: docker_registry_password_tencent
+      repo: ccr.ccs.tencentyun.com/54np/authgate
+      tags: latest
+      registry: ccr.ccs.tencentyun.com
+
+  - name: deploy
+    image: appleboy/drone-ssh:latest
+    settings:
+      host:
+        - 54np-hk03.54np.com
+      username:
+        from_secret: ssh_username_54np_hk03
+      password:
+        from_secret: ssh_password_54np_hk03
+      port: 22
+      command_timeout: 5m
+      script:
+        - docker stack deploy --with-registry-auth --compose-file /data/shared/env/54np/swarm/hk03/compose/zzauth.yaml zzauth
+        - sleep 5
+        - docker pull ccr.ccs.tencentyun.com/54np/authgate:latest
+        - docker system prune --force
+
+trigger:
+  branch: 
+    - develop

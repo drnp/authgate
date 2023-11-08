@@ -8,33 +8,34 @@
  * @file redis.go
  * @package runtime
  * @author Dr.NP <np@herewe.tech>
- * @since 10/26/2023
+ * @since 11/07/2023
  */
 
 package runtime
 
 import (
-	"context"
+	"net"
+	"strconv"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/storage/redis/v3"
 )
 
-var Redis *redis.Client
+var Storage fiber.Storage
 
-func InitRedis() error {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     Config.Redis.Addr,
+func InitStorage() error {
+	host, port, _ := net.SplitHostPort(Config.Redis.Addr)
+	portNum, _ := strconv.Atoi(port)
+	store := redis.New(redis.Config{
+		Host:     host,
+		Port:     portNum,
 		Password: Config.Redis.Password,
-		DB:       Config.Redis.DB,
+		Database: Config.Redis.DB,
 	})
-	err := rdb.Ping(context.TODO()).Err()
-	if err != nil {
-		Logger.Fatalf("redis connection failed: %s", err)
-	}
 
-	Redis = rdb
+	Storage = store
 
-	return err
+	return nil
 }
 
 /*

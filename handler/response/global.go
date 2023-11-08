@@ -22,8 +22,10 @@ const (
 	CodeAuthInformationMissing = 20401404
 	CodeEncodeFailed           = 20500001
 	CodeDecodeFailed           = 20500002
+	CodeStorageFailed          = 20500003
 	CodeTargetNotFound         = 20404001
 	CodeTimeout                = 20408001
+	CodeGeneralHTTPError       = 20400999
 )
 
 const (
@@ -34,8 +36,10 @@ const (
 	MsgAuthInformationMissing = "Authorization information missing"
 	MsgEncodeFailed           = "Encode failed"
 	MsgDecodeFailed           = "Decode failed"
+	MsgStorageFailed          = "Stroage failed"
 	MsgTargetNotFound         = "Target not found"
 	MsgTimeout                = "Timeout"
+	MsgGeneralHTTPError       = "General HTTP error"
 )
 
 /* }}} */

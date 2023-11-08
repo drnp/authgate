@@ -66,7 +66,7 @@ endif
 SOURCE_DIR=$(PREFIX)
 BINARY_DIR=$(PREFIX)/bin
 BINARY=authgate
-DOCKER_TAG=ccr.ccs.tencentyun.com/zzauth/authgate:latest
+DOCKER_TAG=ccr.ccs.tencentyun.com/54np/authgate:latest
 
 .PHONY: all summary svc test upgrade swag doc docker push
 .DEFAULT: all

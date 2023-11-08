@@ -25,9 +25,9 @@ import (
 
 func actionServe(c *cli.Context) error {
 	handler.InitMisc()
-	handler.InitAccount()
-	handler.InitClient()
-	handler.InitRealm()
+	// handler.InitAccount()
+	// handler.InitClient()
+	// handler.InitRealm()
 	handler.InitOAuth()
 	handler.InitOIDC()
 
@@ -71,7 +71,8 @@ func main() {
 	runtime.InitLogger()
 	runtime.InitServer()
 	runtime.InitNats()
-	runtime.InitRedis()
+	//runtime.InitRedis()
+	runtime.InitStorage()
 	runtime.InitDB()
 
 	app := &cli.App{

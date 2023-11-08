@@ -17,7 +17,6 @@ import (
 	"authgate/handler/request"
 	"authgate/handler/response"
 	"authgate/model"
-	"authgate/runtime"
 	"authgate/service"
 	"authgate/utils"
 	"database/sql"
@@ -35,12 +34,12 @@ func InitAccount() *Account {
 	h := new(Account)
 	h.svcAccount = new(service.Account)
 
-	runtime.Server.GET("/accounts", h.list).Name = "AccountGetList"
-	runtime.Server.GET("/account/:id", h.get).Name = "AccountGet"
-	runtime.Server.POST("/account", h.post).Name = "AccountPost"
-	runtime.Server.PUT("/account/:id", h.put).Name = "AccountPut"
-	runtime.Server.DELETE("/account/:id", h.delete).Name = "AccountDelete"
-	runtime.Server.POST("/auth", h.auth).Name = "AccountAuth"
+	// runtime.Server.GET("/accounts", h.list).Name = "AccountGetList"
+	// runtime.Server.GET("/account/:id", h.get).Name = "AccountGet"
+	// runtime.Server.POST("/account", h.post).Name = "AccountPost"
+	// runtime.Server.PUT("/account/:id", h.put).Name = "AccountPut"
+	// runtime.Server.DELETE("/account/:id", h.delete).Name = "AccountDelete"
+	// runtime.Server.POST("/auth", h.auth).Name = "AccountAuth"
 
 	return h
 }
