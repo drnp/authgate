@@ -19,6 +19,8 @@ type LoginForm struct {
 	RememberMe bool   `form:"remember_me" json:"remember_me"`
 }
 
+type RegisterForm struct{}
+
 /*
  * Local variables:
  * tab-width: 4

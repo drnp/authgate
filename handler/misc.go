@@ -108,6 +108,13 @@ func (h *Misc) swaggerJson(c *fiber.Ctx) error {
 	return nil
 }
 
+// @Tags Misc
+// @Summary Show login page
+// @Description 常规登录页面。如果用户已登录，会显示欢迎页面。
+// @ID LoginPage
+// @Produce html
+// @Success 200 302 {object} nil
+// @Router /login [get]
 func (h *Misc) loginPage(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	sess, err := h.store.Get(c)
@@ -131,6 +138,19 @@ func (h *Misc) loginPage(c *fiber.Ctx) error {
 	return c.SendFile("./static/welcome.html")
 }
 
+// @Tags Misc
+// @Summary Process login request
+// @Description 处理登录请求，并生成平台session.登录成功后，如果url中参数 r 不为空（base64），将跳转至目标地址
+// @ID PostLogin
+// @Accept json
+// @Produce json
+// @Param _ body request.LoginForm true "登录信息"
+// @Success 200 {object} nil
+// @Success 302 {object} nil
+// @Failure 500 {object} utils.Envelope
+// @Failure 400 {object} utils.Envelope
+// @Failure 401 {object} utils.Envelope
+// @Router /login [post]
 func (h *Misc) login(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	sess, err := h.store.Get(c)
@@ -203,10 +223,14 @@ func (h *Misc) login(c *fiber.Ctx) error {
 	return c.Redirect(string(callback))
 }
 
-func (h *Misc) registerPage(c *fiber.Ctx) error {
-	return nil
-}
-
+// @Tags Misc
+// @Summary Process logout request
+// Description 处理登出，成功会跳转回登录页面。
+// @ID GetLogout
+// @Success 302 {object} nil
+// @Failure 500 {object} utils.Envelope
+// @Failure 400 {object} utils.Envelope
+// @Router /logout [get]
 func (h *Misc) logout(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	sess, err := h.store.Get(c)
@@ -243,6 +267,27 @@ func (h *Misc) logout(c *fiber.Ctx) error {
 	return nil
 }
 
+// @Tags Misc
+// @Summary Show register page
+// @Description 常规注册页面，如果用户已登录，会显示欢迎页面。
+// @ID RegisterPage
+// @Produce html
+// @Success 200 302 {object} nil
+// @Router /register [get]
+func (h *Misc) registerPage(c *fiber.Ctx) error {
+	return nil
+}
+
+// @Tags Misc
+// @Summary Process register request
+// @Description 处理注册请求，不自动登录。成功后跳转到登录页面。
+// @ID PostRegister
+// @Accept json
+// Produce json
+// @Param _ body request.RegisterForm true "注册信息"
+// @Success 302 {object} nil
+// @Failure 500 {object} utils.Envelope
+// @Failure 400 {object} utils.Envelope
 func (h *Misc) register(c *fiber.Ctx) error {
 	return nil
 }

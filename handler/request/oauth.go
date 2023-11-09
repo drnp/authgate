@@ -63,6 +63,8 @@ type PostToken struct {
 	RefreshToken string `json:"refresh_token" form:"refresh_token"`
 }
 
+type PostRevoke struct{}
+
 /*
  * Local variables:
  * tab-width: 4

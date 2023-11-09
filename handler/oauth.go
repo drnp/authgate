@@ -55,6 +55,20 @@ func InitOAuth() *OAuth {
 	return h
 }
 
+// @Tags OAuth
+// @Summary OAuth2 authorize
+// @Description 认证入口，获取AccessCode，要求账号已登录。如未登录，自动跳转到登录页面，登录成功后，会自动跳转回来。
+// @ID OAuthGetAuthorize
+// @Param client_id query string true "应用ID。"
+// @Param redirect_uri query string true "回调地址，需要与应用注册时登记的一致。该参数在url中需要做encode。"
+// @Param response_type query string true "在授权码模式中，该参数的值固定为 code 。"
+// @Param scope query string true "授权的资源类型列表，在zzauth中，该参数目前被忽略。"
+// @Param state query string true "由第三方应用生成的标识字符串，在authorize请求成功后，会将其原样回传给redirect_uri，用于请求合法性验证，或携带一些特殊内容。"
+// @Param nonce query string false "用于加密的混淆参数，当前未启用。"
+// @Success 302 {object} nil
+// @Failure 500 {object} utils.Envelope
+// @Failure 400 {object} utils.Envelope
+// @Router /oauth/authorize [get]
 func (h *OAuth) authorize(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	sess, err := h.store.Get(c)
@@ -127,6 +141,18 @@ func (h *OAuth) authorize(c *fiber.Ctx) error {
 	return c.Redirect(u.String())
 }
 
+// @Tags OAuth
+// @Summary Get access / refresh token
+// @Description 获取token
+// @ID OAuthPostToken
+// @Accept json
+// @Produce json
+// @Param _ body request.PostToken true "获取token所需的验证信息，其中grant_type默认为access_token，当设置为refresh_token时，在refresh_token未过期的情况下，会重新签发一个access_token。"
+// @Success 201 {object} utils.Envelope{data=response.PostToken}
+// @Failure 400 {object} utils.Envelope
+// @Failure 404 {object} utils.Envelope
+// @Failure 500 {object} utils.Envelope
+// @Router /oauth/token [post]
 func (h *OAuth) token(c *fiber.Ctx) error {
 	e := utils.WrapResponse(nil)
 	req := new(request.PostToken)
@@ -223,9 +249,22 @@ func (h *OAuth) token(c *fiber.Ctx) error {
 		e.Data = resp
 	}
 
-	return c.Format(e)
+	e.Status = fiber.StatusCreated
+
+	return c.Status(fiber.StatusCreated).Format(e)
 }
 
+// @Tags OAuth
+// @Summary Revoke access token
+// @Description 撤销token,在JWT模式下不可用。
+// @ID OAuthPostRevoke
+// @Accept json
+// @Produce json
+// @Param _ body request.PostRevoke true "撤销的token信息"
+// @Success 200 {object} utils.Envelope
+// @Failure 500 {object} utils.Envelope
+// @Failure 400 {object} utils.Envelope
+// @Router /oauth/revoke [post]
 func (h *OAuth) revoke(c *fiber.Ctx) error {
 	return nil
 }

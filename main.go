@@ -66,6 +66,17 @@ func actionInitdb(c *cli.Context) error {
 	return nil
 }
 
+// Portal
+
+// @title ZZAuth::Authgate API
+// @version 0.0.1
+// @description Authgate API
+// @contact.name HereweTech CO.LTD
+// @contact.url https://herewe.tech
+// @contact.email support@herewetech.com
+
+// @host authgate.d.herewe.tech
+// @BasePath /
 func main() {
 	runtime.LoadConfig()
 	runtime.InitLogger()
