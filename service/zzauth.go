@@ -30,9 +30,20 @@ const (
 	ZZAuthSalt        = "pBA2@P5dfq0#OXS63kdmVyuedfZGjYCu"
 	ZZClientValidPath = "/api/v1/oauth/client/valid"
 	ZZUserValidPath   = "/api/v1/oauth/user/valid"
+	ZZListClientPath  = "/api/v1/outside/client/list"
 
 	AccessCodeLength = 40
 )
+
+type ZZListClientRequest struct {
+	UID int `json:"uid"`
+}
+
+type ZZListClientResponse struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data []*ZZClient `json:"data"`
+}
 
 type ZZClientValidRequest struct {
 	ClientID  string `json:"client_id"`
@@ -87,6 +98,25 @@ func NewZZAuth() *ZZAuth {
 	svc := new(ZZAuth)
 
 	return svc
+}
+
+func (s *ZZAuth) ListClient(ctx context.Context, userID int) ([]*ZZClient, error) {
+	req := &ZZListClientRequest{
+		UID: userID,
+	}
+	resp := new(ZZListClientResponse)
+	c := fiber.Post(runtime.Config.ZZAuth.BaseURL + ZZListClientPath).JSON(req)
+	status, body, _ := c.Bytes()
+	if status != fiber.StatusOK {
+		return nil, errors.New("fetch client list failed")
+	}
+
+	err := json.Unmarshal([]byte(body), resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Data, nil
 }
 
 func (s *ZZAuth) ValidClient(ctx context.Context, clientID string) (*ZZClient, error) {

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZZAuth - 首页</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: -webkit-linear-gradient(to right, #155799, #159957);
+        background: linear-gradient(to right, #155799, #159957);
+        color: whitesmoke;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      form {
+        width: 35rem;
+        margin: auto;
+        color: whitesmoke;
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        backdrop-filter: blur(16px) saturate(180%);
+        background-color: rgba(11, 15, 13, 0.582);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.125);
+        padding: 20px 25px;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        margin: 10px 0;
+        border-radius: 5px;
+        padding: 15px 18px;
+        box-sizing: border-box;
+      }
+
+      button {
+        background-color: #030804;
+        color: white;
+        padding: 14px 20px;
+        border-radius: 5px;
+        margin: 7px 0;
+        width: 100%;
+        font-size: 18px;
+      }
+
+      button:hover {
+        opacity: 0.6;
+        cursor: pointer;
+      }
+
+      .headingsContainer {
+        text-align: center;
+      }
+
+      .headingsContainer p {
+        color: gray;
+      }
+      .mainContainer {
+        width: 50rem;
+        margin: auto;
+        color: whitesmoke;
+        -webkit-backdrop-filter: blur(16px) saturate(180%);
+        backdrop-filter: blur(16px) saturate(180%);
+        background-color: rgba(11, 15, 13, 0.582);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.125);
+        padding: 16px;
+      }
+
+      .subcontainer {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .subcontainer a {
+        font-size: 16px;
+        margin-bottom: 12px;
+      }
+
+      span.forgotpsd a {
+        float: right;
+        color: whitesmoke;
+        padding-top: 16px;
+      }
+
+      .forgotpsd a {
+        color: rgb(74, 146, 235);
+      }
+
+      .forgotpsd a:link {
+        text-decoration: none;
+      }
+
+      .register {
+        color: white;
+        text-align: center;
+      }
+
+      .register a {
+        color: rgb(74, 146, 235);
+      }
+
+      .register a:link {
+        text-decoration: none;
+      }
+
+      .table {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .row {
+        display: table-row;
+      }
+
+      .cell {
+        display: table-cell;
+        border: 1px solid #ccc;
+        padding: 5px;
+      }
+
+      /* Media queries for the responsiveness of the page */
+      @media screen and (max-width: 600px) {
+        form {
+          width: 25rem;
+        }
+      }
+
+      @media screen and (max-width: 400px) {
+        form {
+          width: 20rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>应用列表</h1>
+    <div class="mainContainer">
+      <div class="table">
+        {{ range . }}
+        <div class="row">
+          <div class="cell">{{ .ClientName }}</div>
+          <div class="cell">{{ .ClientDesc }}</div>
+          <div class="cell">
+            <img alt="{{ .ClientName }}" src="{{ .ClientLogo }}" />
+          </div>
+          <div class="cell">
+            <a href="{{ .RedirectURL }}" target="_blank">[访问]</a>
+          </div>
+        </div>
+        {{ end }}
+      </div>
+      <div class="subcontainer">
+        <p class="forgotpsd"><a href="/logout">退出登录</a></p>
+      </div>
+    </div>
+  </body>
+</html>

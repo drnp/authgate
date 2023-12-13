@@ -20,7 +20,10 @@ import (
 	"authgate/runtime"
 	"authgate/service"
 	"authgate/utils"
+	"bytes"
 	"encoding/base64"
+	"fmt"
+	"html/template"
 	"os"
 
 	"github.com/gofiber/contrib/swagger"
@@ -58,6 +61,7 @@ func InitMisc() *Misc {
 	runtime.Server.Post("/register", h.register).Name("PostRegister")
 	runtime.Server.Get("/confirm", h.confirmPage).Name("ConfirmPage")
 	runtime.Server.Post("/confirm", h.confirm).Name("PostConfirm")
+	runtime.Server.Get("/portal", h.portal).Name("GetPortal")
 
 	return h
 }
@@ -174,7 +178,8 @@ func (h *Misc) login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).Format(e)
 	}
 
-	callback := c.Context().Referer()
+	//callback := c.Context().Referer()
+	callback := []byte("/portal")
 	r := c.Query("r")
 	if r != "" {
 		// Redirect back
@@ -298,6 +303,61 @@ func (h *Misc) confirmPage(c *fiber.Ctx) error {
 
 func (h *Misc) confirm(c *fiber.Ctx) error {
 	return nil
+}
+
+func (h *Misc) portal(c *fiber.Ctx) error {
+	e := utils.WrapResponse(nil)
+	sess, err := h.store.Get(c)
+	if err != nil {
+		e.Status = fiber.StatusInternalServerError
+		e.Code = response.CodeStorageFailed
+		e.Message = response.MsgStorageFailed
+		e.Data = err.Error()
+
+		return c.Status(fiber.StatusInternalServerError).Format(e)
+	}
+
+	// Check login
+	ub, ok := sess.Get("user").([]byte)
+	if !ok {
+		return c.Redirect("/login")
+	}
+
+	su := new(utils.SessionUser)
+	su.Unserialize(ub)
+
+	// Get client list
+	clients, err := h.svcZZAuth.ListClient(c.Context(), su.ID)
+	if err != nil {
+		if err != nil {
+			e.Status = fiber.StatusInternalServerError
+			e.Code = response.CodeStorageFailed
+			e.Message = response.MsgStorageFailed
+			e.Data = err.Error()
+
+			return c.Status(fiber.StatusInternalServerError).Format(e)
+		}
+	}
+
+	e.Data = clients
+
+	b := bytes.NewBuffer(nil)
+	tmpl, err := template.ParseFiles("./static/portal.html")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(tmpl.DefinedTemplates())
+
+	err = tmpl.ExecuteTemplate(b, "portal.html", clients)
+	if err != nil {
+		return err
+	}
+
+	c.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
+	_, err = c.Write(b.Bytes())
+
+	return err
 }
 
 // func (h *Misc) routers(ctx echo.Context) error {
